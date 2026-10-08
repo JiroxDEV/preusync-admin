@@ -2,9 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: api.js
- * Versión: v1.0.0
+ * Versión: v1.1.0
  * Descripción: Cliente HTTP centralizado para interactuar con la API de PreuSync.
- *              Incluye inyección automática de JWT, refresh token y manejo de errores.
+ *              Incluye endpoints de creación de posts, eventos, efemérides y gestión de usuarios.
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -103,6 +103,17 @@ export class ApiClient {
     return ApiClient.request('/auth/me');
   }
 
+  static getUserByUsername(username) {
+    return ApiClient.request(`/users/by-username/${encodeURIComponent(username)}`);
+  }
+
+  static updateUserRoleStatus(userId, updateData) {
+    return ApiClient.request(`/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData)
+    });
+  }
+
   static getProvinces() {
     return ApiClient.request('/schools/provinces');
   }
@@ -138,6 +149,13 @@ export class ApiClient {
     return ApiClient.request(`/posts/range?start=${start}&count=${count}`);
   }
 
+  static addPost(postData) {
+    return ApiClient.request('/posts', {
+      method: 'POST',
+      body: JSON.stringify(postData)
+    });
+  }
+
   static getTopNews(limit = 10) {
     return ApiClient.request(`/news/top?limit=${limit}`);
   }
@@ -161,7 +179,27 @@ export class ApiClient {
     return ApiClient.request(`/events/external?start=${start}&count=${count}`);
   }
 
+  static addEvent(eventData) {
+    return ApiClient.request('/events', {
+      method: 'POST',
+      body: JSON.stringify(eventData)
+    });
+  }
+
   static getEphemeris(date) {
     return ApiClient.request(`/ephemeris?date=${encodeURIComponent(date)}`);
+  }
+
+  static addEphemeris(ephemerisData) {
+    return ApiClient.request('/ephemeris', {
+      method: 'POST',
+      body: JSON.stringify(ephemerisData)
+    });
+  }
+
+  static deleteEphemeris(id) {
+    return ApiClient.request(`/ephemeris/${id}`, {
+      method: 'DELETE'
+    });
   }
 }
