@@ -1,0 +1,2 @@
+release_date,version_name,details
+01/10/2026,v1.0.0,"feat: Inicialización del Panel Admin Web de PreuSync (preusync-admin v1.0.0). Arquitectura SPA en HTML5 + ES6 Modules + Tailwind CSS sin dependencias locales. Módulos integrados: Editor Dinámico de Horarios (16 turnos), Jerarquía Nacional (Provincias, Municipios, Escuelas, Grupos), Gestor de Contenidos (Noticias/Posts), Usuarios/Roles y Moderación/Bugs. Integración en vivo con API REST en Render."
