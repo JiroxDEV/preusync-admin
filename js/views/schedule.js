@@ -126,6 +126,7 @@ async function loadSchools() {
 
 async function loadGroupsForSchool(schoolId) {
   const groupSel = document.getElementById('selectGroup');
+  if (!groupSel) return;
   groupSel.innerHTML = '<option value="">Cargando grupos...</option>';
   try {
     const res = await ApiClient.getGroups(schoolId);
@@ -138,7 +139,7 @@ async function loadGroupsForSchool(schoolId) {
     currentGroup = groups[0].name;
     loadScheduleData();
   } catch (e) {
-    groupSel.innerHTML = '<option value="10 - 1">10 - 1</option><option value="10 - 2">10 - 2</option><option value="11 - 1">11 - 1</option><option value="11 - 2">11 - 2</option><option value="12 - 1">12 - 1</option><option value="12 - 2">12 - 2</option>';
+    if (groupSel) groupSel.innerHTML = '<option value="10 - 1">10 - 1</option><option value="10 - 2">10 - 2</option><option value="11 - 1">11 - 1</option><option value="11 - 2">11 - 2</option><option value="12 - 1">12 - 1</option><option value="12 - 2">12 - 2</option>';
     currentGroup = '10 - 1';
     loadScheduleData();
   }
