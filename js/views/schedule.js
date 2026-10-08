@@ -2,8 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: schedule.js
- * Versión: v1.0.0
+ * Versión: v1.1.0
  * Descripción: Editor Dinámico de Horarios Escolares con matriz de 16 turnos.
+ *              Sincronización 100% dinámica con la base de datos de Supabase via API.
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -26,7 +27,7 @@ const OFFICIAL_TIME_RANGES = [
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
-let currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a'; // Escuela por defecto
+let currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a'; // ID de Escuela por defecto
 let currentGroup = '10 - 1';
 let currentMatrix = Array(16).fill(null).map(() => Array(5).fill('?'));
 
@@ -52,18 +53,13 @@ export async function renderScheduleEditor(container) {
         <div>
           <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Escuela Seleccionada</label>
           <select id="selectSchool" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPVCE Mártires de Humboldt</option>
+            <option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">Cargando escuelas...</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Grupo Escolar</label>
           <select id="selectGroup" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="10 - 1">10 - 1</option>
-            <option value="10 - 2">10 - 2</option>
-            <option value="11 - 1">11 - 1</option>
-            <option value="11 - 2">11 - 2</option>
-            <option value="12 - 1">12 - 1</option>
-            <option value="12 - 2">12 - 2</option>
+            <option value="10 - 1">Cargando grupos...</option>
           </select>
         </div>
       </div>
@@ -92,7 +88,12 @@ export async function renderScheduleEditor(container) {
 
   if (window.lucide) window.lucide.createIcons();
 
-  // Listeners de cambio de grupo y guardado
+  // Listeners de cambio de escuela y grupo
+  document.getElementById('selectSchool').addEventListener('change', (e) => {
+    currentSchoolId = e.target.value;
+    loadGroupsForSchool(currentSchoolId);
+  });
+
   document.getElementById('selectGroup').addEventListener('change', (e) => {
     currentGroup = e.target.value;
     loadScheduleData();
@@ -100,7 +101,47 @@ export async function renderScheduleEditor(container) {
 
   document.getElementById('btnSaveSchedule').addEventListener('click', saveScheduleData);
 
-  loadScheduleData();
+  loadSchools();
+}
+
+async function loadSchools() {
+  const schoolSel = document.getElementById('selectSchool');
+  try {
+    // Carga de la primera lista de escuelas de Artemisa por defecto
+    const res = await ApiClient.getSchools('eba718c1-f696-4a98-91cc-2cd37b9e405a');
+    const schools = res.data || [];
+    if (schools.length > 0) {
+      schoolSel.innerHTML = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      currentSchoolId = schools[0].id;
+    } else {
+      schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPVCE Mártires de Humboldt</option>';
+      currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
+    }
+  } catch (e) {
+    schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPVCE Mártires de Humboldt</option>';
+    currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
+  }
+  loadGroupsForSchool(currentSchoolId);
+}
+
+async function loadGroupsForSchool(schoolId) {
+  const groupSel = document.getElementById('selectGroup');
+  groupSel.innerHTML = '<option value="">Cargando grupos...</option>';
+  try {
+    const res = await ApiClient.getGroups(schoolId);
+    const groups = res.data || [];
+    if (groups.length === 0) {
+      groupSel.innerHTML = '<option value="">Sin grupos en BD</option>';
+      return;
+    }
+    groupSel.innerHTML = groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+    currentGroup = groups[0].name;
+    loadScheduleData();
+  } catch (e) {
+    groupSel.innerHTML = '<option value="10 - 1">10 - 1</option><option value="10 - 2">10 - 2</option><option value="11 - 1">11 - 1</option><option value="11 - 2">11 - 2</option><option value="12 - 1">12 - 1</option><option value="12 - 2">12 - 2</option>';
+    currentGroup = '10 - 1';
+    loadScheduleData();
+  }
 }
 
 async function loadScheduleData() {
