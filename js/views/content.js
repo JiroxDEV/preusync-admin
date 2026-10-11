@@ -2,8 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: content.js
- * Versión: v1.3.0
- * Descripción: Gestor de Contenidos Completo (Publicar Posts, Noticias, Eventos y Efemérides).
+ * Versión: v1.4.0
+ * Descripción: Gestor de Contenidos con soporte completo para adjunción de imágenes
+ *              en Noticias, Posts, Eventos y Efemérides.
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -13,6 +14,15 @@ import { ApiClient } from '../api.js';
 
 let activeContentTab = 'news';
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+}
+
 export async function renderContentManager(container) {
   container.innerHTML = `
     <div class="space-y-6 animate-fade-in">
@@ -20,7 +30,7 @@ export async function renderContentManager(container) {
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100">Centro de Contenidos</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400">Administra Noticias, Publicaciones de Comunidad, Eventos y Efemérides por separado</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Administra Noticias, Publicaciones de Comunidad, Eventos y Efemérides con soporte de imágenes</p>
         </div>
       </div>
 
@@ -95,10 +105,17 @@ async function renderNewsTab(container) {
       <div class="space-y-3">
         <input type="text" id="newsHeadline" placeholder="Encabezado / Titular de la Noticia" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500" />
         <textarea id="newsDetails" rows="3" placeholder="Detalles o descripción completa..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input type="text" id="newsSource" placeholder="Fuente (ej. Dirección IPVCE)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500" />
           <input type="text" id="newsUrl" placeholder="Enlace externo URL (opcional)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500" />
         </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Imagen Adjunta de Portada (Opcional)</label>
+          <input type="file" id="newsImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-950 dark:file:text-purple-300" />
+        </div>
+
         <button id="btnPublishNews" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm transition-all shadow-sm">
           Enviar Noticia
         </button>
@@ -123,17 +140,26 @@ async function renderNewsTab(container) {
     const details = document.getElementById('newsDetails').value.trim();
     const source = document.getElementById('newsSource').value.trim() || 'PreuSync';
     const url = document.getElementById('newsUrl').value.trim() || 'https://preusync.com';
+    const imageFileInput = document.getElementById('newsImageFile');
 
     if (!headline || !details) {
       alert('El titular y los detalles son obligatorios.');
       return;
     }
 
+    let imageBase64 = '';
+    if (imageFileInput && imageFileInput.files[0]) {
+      try {
+        imageBase64 = await fileToBase64(imageFileInput.files[0]);
+      } catch (e) {}
+    }
+
     try {
-      await ApiClient.addNews({ headline, details, source, url });
+      await ApiClient.addNews({ headline, details, source, url, imageBase64 });
       alert('¡Noticia publicada con éxito!');
       document.getElementById('newsHeadline').value = '';
       document.getElementById('newsDetails').value = '';
+      if (imageFileInput) imageFileInput.value = '';
       loadNewsList();
     } catch (e) {
       alert('Error al publicar noticia: ' + e.message);
@@ -169,7 +195,6 @@ async function loadNewsList() {
 // ==================== 2. PESTAÑA PUBLICACIONES ====================
 async function renderPostsTab(container) {
   container.innerHTML = `
-    <!-- Formulario para publicar como Admin -->
     <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
       <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <i data-lucide="plus-circle" class="w-5 h-5 text-amber-500"></i>
@@ -178,13 +203,18 @@ async function renderPostsTab(container) {
       <div class="space-y-3">
         <input type="text" id="postTitle" placeholder="Título de la publicación" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500" />
         <textarea id="postDetails" rows="3" placeholder="Detalles / Contenido en Markdown..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Imagen Adjunta (Opcional)</label>
+          <input type="file" id="postImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 dark:file:bg-amber-950 dark:file:text-amber-300" />
+        </div>
+
         <button id="btnPublishPost" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition-all shadow-sm">
           Publicar Post
         </button>
       </div>
     </div>
 
-    <!-- Lista de Publicaciones de la Comunidad -->
     <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
       <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <i data-lucide="message-square" class="w-5 h-5 text-amber-500"></i>
@@ -201,17 +231,26 @@ async function renderPostsTab(container) {
   document.getElementById('btnPublishPost').addEventListener('click', async () => {
     const title = document.getElementById('postTitle').value.trim();
     const details = document.getElementById('postDetails').value.trim();
+    const postFileInput = document.getElementById('postImageFile');
 
     if (!title || !details) {
       alert('El título y el contenido son obligatorios.');
       return;
     }
 
+    let imageBase64 = '';
+    if (postFileInput && postFileInput.files[0]) {
+      try {
+        imageBase64 = await fileToBase64(postFileInput.files[0]);
+      } catch (e) {}
+    }
+
     try {
-      await ApiClient.addPost({ title, details });
+      await ApiClient.addPost({ title, details, imageBase64 });
       alert('¡Publicación creada exitosamente!');
       document.getElementById('postTitle').value = '';
       document.getElementById('postDetails').value = '';
+      if (postFileInput) postFileInput.value = '';
       loadPostsList();
     } catch (e) {
       alert('Error al crear publicación: ' + e.message);
@@ -248,7 +287,6 @@ async function loadPostsList() {
 // ==================== 3. PESTAÑA EVENTOS ====================
 async function renderEventsTab(container) {
   container.innerHTML = `
-    <!-- Formulario para crear Evento -->
     <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
       <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <i data-lucide="plus-circle" class="w-5 h-5 text-sky-500"></i>
@@ -269,6 +307,12 @@ async function renderEventsTab(container) {
           </select>
           <input type="text" id="eventSchoolId" value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a" placeholder="ID de Escuela" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Póster o Imagen del Evento (Opcional)</label>
+          <input type="file" id="eventImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 dark:file:bg-sky-950 dark:file:text-sky-300" />
+        </div>
+
         <button id="btnPublishEvent" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm transition-all shadow-sm">
           Guardar Evento
         </button>
@@ -286,17 +330,26 @@ async function renderEventsTab(container) {
     const location = document.getElementById('eventLocation').value.trim();
     const eventType = document.getElementById('eventType').value;
     const schoolId = document.getElementById('eventSchoolId').value.trim();
+    const eventFileInput = document.getElementById('eventImageFile');
 
     if (!title || !details || !date || !time || !location) {
       alert('Todos los campos del evento son obligatorios.');
       return;
     }
 
+    let imageBase64 = '';
+    if (eventFileInput && eventFileInput.files[0]) {
+      try {
+        imageBase64 = await fileToBase64(eventFileInput.files[0]);
+      } catch (e) {}
+    }
+
     try {
-      await ApiClient.addEvent({ title, details, date, time, location, eventType, schoolId });
+      await ApiClient.addEvent({ title, details, date, time, location, eventType, schoolId, imageBase64 });
       alert('¡Evento agendado con éxito!');
       document.getElementById('eventTitle').value = '';
       document.getElementById('eventDetails').value = '';
+      if (eventFileInput) eventFileInput.value = '';
     } catch (e) {
       alert('Error al agendar evento: ' + e.message);
     }
@@ -306,7 +359,6 @@ async function renderEventsTab(container) {
 // ==================== 4. PESTAÑA EFEMÉRIDES ====================
 async function renderEphemeridesTab(container) {
   container.innerHTML = `
-    <!-- Formulario para agregar Efeméride -->
     <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
       <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-500"></i>
@@ -320,6 +372,12 @@ async function renderEphemeridesTab(container) {
           <input type="number" id="ephMonth" min="1" max="12" value="${new Date().getMonth() + 1}" placeholder="Mes (1-12)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           <input type="number" id="ephYear" placeholder="Año histórico (ej. 1868)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Imagen Histórica Adjunta (Opcional)</label>
+          <input type="file" id="ephImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-950 dark:file:text-indigo-300" />
+        </div>
+
         <button id="btnPublishEph" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all shadow-sm">
           Guardar Efeméride
         </button>
@@ -335,17 +393,26 @@ async function renderEphemeridesTab(container) {
     const day = parseInt(document.getElementById('ephDay').value);
     const month = parseInt(document.getElementById('ephMonth').value);
     const year = document.getElementById('ephYear').value.trim();
+    const ephFileInput = document.getElementById('ephImageFile');
 
     if (!title || !day || !month) {
       alert('El título, el día y el mes son obligatorios.');
       return;
     }
 
+    let imageBase64 = '';
+    if (ephFileInput && ephFileInput.files[0]) {
+      try {
+        imageBase64 = await fileToBase64(ephFileInput.files[0]);
+      } catch (e) {}
+    }
+
     try {
-      await ApiClient.addEphemeris({ title, details, day, month, year, importance: 5 });
+      await ApiClient.addEphemeris({ title, details, day, month, year, imageBase64, importance: 5 });
       alert('¡Efeméride registrada con éxito!');
       document.getElementById('ephTitle').value = '';
       document.getElementById('ephDetails').value = '';
+      if (ephFileInput) ephFileInput.value = '';
     } catch (e) {
       alert('Error al registrar efeméride: ' + e.message);
     }
