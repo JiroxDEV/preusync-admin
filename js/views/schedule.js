@@ -13,9 +13,9 @@
 import { ApiClient } from '../api.js';
 
 const SHIFT_LABELS = [
-  'CI', 'Turno 1 (T1)', 'Descanso (D5)', 'Turno 2 (T2)', 'Descanso (D5)', 'Turno 3 (T3)', 'Receso (R)',
-  'Turno 4 (T4)', 'Descanso (D5)', 'Turno 5 (T5)', 'Almuerzo (AZ)', 'Turno 6 (T6)', 'Descanso (D5)',
-  'Turno 7 (T7)', 'Descanso (D5)', 'Turno 8 (T8)'
+  'CI', 'T1', 'D5', 'T2', 'D5', 'T3', 'R',
+  'T4', 'D5', 'T5', 'AZ', 'T6', 'D5',
+  'T7', 'D5', 'T8'
 ];
 
 const OFFICIAL_TIME_RANGES = [
