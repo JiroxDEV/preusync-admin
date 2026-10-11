@@ -1,0 +1,2 @@
+release_date,version_name,details
+01/10/2026,v0.3.0,"feat: Lanzamiento Oficial del Panel Web Admin PreuSync v0.3.0. Arquitectura SPA en HTML5 + ES6 Modules + Tailwind CSS. Módulos integrados: Editor Dinámico de Horarios (16 turnos), Jerarquía Nacional (Provincias, Municipios, Escuelas, Grupos), Gestor de Contenidos (Noticias, Posts, Eventos, Efemérides), Gestión Operativa de Usuarios/Roles, Moderación y Telemetría en Tiempo Real de Planes Supabase/Render."
