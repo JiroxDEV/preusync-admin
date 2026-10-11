@@ -2,9 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: schedule.js
- * Versión: v1.1.0
- * Descripción: Editor Dinámico de Horarios Escolares con matriz de 16 turnos.
- *              Sincronización 100% dinámica con la base de datos de Supabase via API.
+ * Versión: v1.2.0
+ * Descripción: Editor Dinámico de Horarios Escolares con leyenda interactiva
+ *              basada en la especificación oficial de 'Horario escolar.ods'.
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -13,9 +13,9 @@
 import { ApiClient } from '../api.js';
 
 const SHIFT_LABELS = [
-  'CI', 'Turno 1', 'Descanso', 'Turno 2', 'Descanso', 'Turno 3', 'Merienda',
-  'Turno 4', 'Descanso', 'Turno 5', 'Almuerzo', 'Turno 6', 'Descanso',
-  'Turno 7', 'Descanso', 'Turno 8'
+  'CI', 'Turno 1 (T1)', 'Descanso (D5)', 'Turno 2 (T2)', 'Descanso (D5)', 'Turno 3 (T3)', 'Receso (R)',
+  'Turno 4 (T4)', 'Descanso (D5)', 'Turno 5 (T5)', 'Almuerzo (AZ)', 'Turno 6 (T6)', 'Descanso (D5)',
+  'Turno 7 (T7)', 'Descanso (D5)', 'Turno 8 (T8)'
 ];
 
 const OFFICIAL_TIME_RANGES = [
@@ -27,7 +27,7 @@ const OFFICIAL_TIME_RANGES = [
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
-let currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a'; // ID de Escuela por defecto
+let currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
 let currentGroup = '10 - 1';
 let currentMatrix = Array(16).fill(null).map(() => Array(5).fill('?'));
 
@@ -64,12 +64,59 @@ export async function renderScheduleEditor(container) {
         </div>
       </div>
 
+      <!-- Leyenda de Nomenclatura y Asignaturas -->
+      <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
+        <div id="btnToggleLegend" class="flex items-center justify-between cursor-pointer">
+          <div class="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-bold text-sm">
+            <i data-lucide="book-open" class="w-4 h-4"></i>
+            <span>Leyenda Oficial de Asignaturas y Nomenclatura</span>
+          </div>
+          <span class="text-xs text-slate-400">Mostrar / Ocultar Leyenda ▼</span>
+        </div>
+
+        <div id="legendContent" class="space-y-4 text-xs border-t border-slate-100 dark:border-slate-700/60 pt-3">
+          <!-- Nomenclatura de Turnos y Pausas -->
+          <div>
+            <h4 class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Nomenclatura de Jornada y Pausas:</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>CI:</strong> Conversación Inicial</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>T1 - T8:</strong> Turno 1 a Turno 8</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>D5 (-):</strong> Descanso (5 min)</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>R (—):</strong> Receso Merienda</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>AZ (///):</strong> Almuerzo</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>?:</strong> Sin turno definido</span>
+            </div>
+          </div>
+
+          <!-- Glosario de Asignaturas Oficiales -->
+          <div>
+            <h4 class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Abreviaturas de Asignaturas Oficiales:</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>M:</strong> Matemáticas</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>LL:</strong> Literatura y Lengua</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>HC:</strong> Historia de Cuba</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>H:</strong> Historia Contemporánea</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>B:</strong> Biología</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>CP:</strong> Cultura Política</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>DC:</strong> Defensa Civil</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>IF:</strong> Informática</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>I:</strong> Inglés</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>Q:</strong> Química</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>EF:</strong> Educación Física</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>F:</strong> Física</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>G:</strong> Geografía Regional</span>
+              <span class="p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30 text-sky-800 dark:text-sky-300 border border-sky-100 dark:border-sky-900 font-medium"><strong>DR:</strong> Debate y Reflexión</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Matriz Interactiva de Horario -->
       <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-x-auto">
         <table class="w-full text-left text-sm border-collapse min-w-[700px]">
           <thead>
             <tr class="bg-slate-100 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
-              <th class="p-3 w-28">Turno</th>
+              <th class="p-3 w-36">Turno / Etapa</th>
               <th class="p-3 w-36">Duración</th>
               <th class="p-3">Lunes</th>
               <th class="p-3">Martes</th>
@@ -88,7 +135,10 @@ export async function renderScheduleEditor(container) {
 
   if (window.lucide) window.lucide.createIcons();
 
-  // Listeners de cambio de escuela y grupo
+  document.getElementById('btnToggleLegend').addEventListener('click', () => {
+    document.getElementById('legendContent').classList.toggle('hidden');
+  });
+
   document.getElementById('selectSchool').addEventListener('change', (e) => {
     currentSchoolId = e.target.value;
     loadGroupsForSchool(currentSchoolId);
@@ -107,7 +157,6 @@ export async function renderScheduleEditor(container) {
 async function loadSchools() {
   const schoolSel = document.getElementById('selectSchool');
   try {
-    // Carga de la primera lista de escuelas de Artemisa por defecto
     const res = await ApiClient.getSchools('eba718c1-f696-4a98-91cc-2cd37b9e405a');
     const schools = res.data || [];
     if (schools.length > 0) {
@@ -193,7 +242,6 @@ function renderTableRows() {
     `;
   }).join('');
 
-  // Listener para edición directa de celdas
   tbody.querySelectorAll('input').forEach(input => {
     input.addEventListener('change', (e) => {
       const r = parseInt(e.target.dataset.row);
