@@ -2,9 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: schedule.js
- * Versión: v1.2.0
- * Descripción: Editor Dinámico de Horarios Escolares con leyenda interactiva
- *              basada en la especificación oficial de 'Horario escolar.ods'.
+ * Versión: v1.3.0
+ * Descripción: Editor Dinámico de Horarios Escolares con restricción de edición
+ *              en pausas (CI, D5, R, AZ) y selector desplegable de asignaturas para turnos (T1-T8).
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -26,6 +26,24 @@ const OFFICIAL_TIME_RANGES = [
 ];
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+const SUBJECT_OPTIONS = [
+  { code: '?', label: '? (Sin asignación)' },
+  { code: 'M', label: 'M - Matemáticas' },
+  { code: 'LL', label: 'LL - Literatura y Lengua' },
+  { code: 'HC', label: 'HC - Historia de Cuba' },
+  { code: 'H', label: 'H - Historia Contemporánea' },
+  { code: 'B', label: 'B - Biología' },
+  { code: 'CP', label: 'CP - Cultura Política' },
+  { code: 'DC', label: 'DC - Defensa Civil' },
+  { code: 'IF', label: 'IF - Informática' },
+  { code: 'I', label: 'I - Inglés' },
+  { code: 'Q', label: 'Q - Química' },
+  { code: 'EF', label: 'EF - Educación Física' },
+  { code: 'F', label: 'F - Física' },
+  { code: 'G', label: 'G - Geografía Regional' },
+  { code: 'DR', label: 'DR - Debate y Reflexión' }
+];
 
 let currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
 let currentGroup = '10 - 1';
@@ -77,14 +95,14 @@ export async function renderScheduleEditor(container) {
         <div id="legendContent" class="space-y-4 text-xs border-t border-slate-100 dark:border-slate-700/60 pt-3">
           <!-- Nomenclatura de Turnos y Pausas -->
           <div>
-            <h4 class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Nomenclatura de Jornada y Pausas:</h4>
+            <h4 class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Nomenclatura de Jornada y Pausas (Fijas):</h4>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>CI:</strong> Conversación Inicial</span>
-              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>T1 - T8:</strong> Turno 1 a Turno 8</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>T1 - T8:</strong> Turnos de Clase</span>
               <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>D5 (-):</strong> Descanso (5 min)</span>
               <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>R (—):</strong> Receso Merienda</span>
               <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>AZ (///):</strong> Almuerzo</span>
-              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>?:</strong> Sin turno definido</span>
+              <span class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-medium"><strong>?:</strong> Sin turno asignado</span>
             </div>
           </div>
 
@@ -116,7 +134,7 @@ export async function renderScheduleEditor(container) {
         <table class="w-full text-left text-sm border-collapse min-w-[700px]">
           <thead>
             <tr class="bg-slate-100 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
-              <th class="p-3 w-36">Turno / Etapa</th>
+              <th class="p-3 w-28">Etapa</th>
               <th class="p-3 w-36">Duración</th>
               <th class="p-3">Lunes</th>
               <th class="p-3">Martes</th>
@@ -223,6 +241,7 @@ function renderTableRows() {
   const tbody = document.getElementById('scheduleTableBody');
   tbody.innerHTML = SHIFT_LABELS.map((label, r) => {
     const isBreak = (r === 0 || r === 2 || r === 4 || r === 6 || r === 8 || r === 10 || r === 12 || r === 14);
+    const breakSubject = r === 0 ? 'CI' : (r === 6 ? '—' : (r === 10 ? '///' : '-'));
     const rowBg = isBreak ? 'bg-slate-50/50 dark:bg-slate-900/30' : '';
 
     return `
@@ -230,11 +249,26 @@ function renderTableRows() {
         <td class="p-3 font-semibold text-slate-700 dark:text-slate-300">${label}</td>
         <td class="p-3 text-xs font-mono text-slate-500 dark:text-slate-400">${OFFICIAL_TIME_RANGES[r]}</td>
         ${DAYS.map((_, d) => {
-          const val = currentMatrix[r][d] || '?';
+          if (isBreak) {
+            currentMatrix[r][d] = breakSubject;
+            return `
+              <td class="p-1 text-center">
+                <span class="inline-block w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-400 font-bold text-xs select-none">
+                  ${breakSubject}
+                </span>
+              </td>
+            `;
+          }
+
+          const currentVal = currentMatrix[r][d] || '?';
           return `
             <td class="p-1">
-              <input type="text" data-row="${r}" data-col="${d}" value="${val}"
-                class="w-full px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center font-bold text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 uppercase transition-all" />
+              <select data-row="${r}" data-col="${d}"
+                class="w-full px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center font-bold text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+                ${SUBJECT_OPTIONS.map(opt => `
+                  <option value="${opt.code}" ${opt.code === currentVal ? 'selected' : ''}>${opt.label}</option>
+                `).join('')}
+              </select>
             </td>
           `;
         }).join('')}
@@ -242,11 +276,11 @@ function renderTableRows() {
     `;
   }).join('');
 
-  tbody.querySelectorAll('input').forEach(input => {
-    input.addEventListener('change', (e) => {
+  tbody.querySelectorAll('select').forEach(select => {
+    select.addEventListener('change', (e) => {
       const r = parseInt(e.target.dataset.row);
       const d = parseInt(e.target.dataset.col);
-      currentMatrix[r][d] = e.target.value.toUpperCase().trim();
+      currentMatrix[r][d] = e.target.value;
     });
   });
 }
