@@ -181,11 +181,11 @@ async function loadSchools() {
       schoolSel.innerHTML = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
       currentSchoolId = schools[0].id;
     } else {
-      schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPVCE Mártires de Humboldt</option>';
+      schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPU Ursinio Rojas Santiesteban</option>';
       currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
     }
   } catch (e) {
-    schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPVCE Mártires de Humboldt</option>';
+    schoolSel.innerHTML = '<option value="f4a234a1-b7aa-40d6-b217-b7b4afd70c3a">IPU Ursinio Rojas Santiesteban</option>';
     currentSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
   }
   loadGroupsForSchool(currentSchoolId);

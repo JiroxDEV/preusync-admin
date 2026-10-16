@@ -2,9 +2,8 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: schools.js
- * Versión: v2.0.0
- * Descripción: Gestor Interactivo de Jerarquía Nacional por Tablas de Listados
- *              (Provincias, Municipios, Escuelas y Grupos) con Acciones Directas.
+ * Versión: v2.1.0
+ * Descripción: Gestor Interactivo de Jerarquía Nacional (Holguín / Báguanos / IPU Ursinio Rojas).
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -12,8 +11,8 @@
 
 import { ApiClient } from '../api.js';
 
-let activeProvince = null;
-let activeMunicipality = null;
+let activeProvince = { id: '3fb4bac7-0eb5-46f4-a655-ef289aceaf0c', name: 'Holguín' };
+let activeMunicipality = { id: 'eba718c1-f696-4a98-91cc-2cd37b9e405a', name: 'Báguanos' };
 
 export async function renderSchoolsManager(container) {
   container.innerHTML = `
@@ -57,7 +56,7 @@ export async function renderSchoolsManager(container) {
           <div class="flex items-center justify-between">
             <h2 id="municipalityTitleHeader" class="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
               <i data-lucide="building-2" class="w-5 h-5 text-indigo-500"></i>
-              Municipios
+              Municipios (Holguín)
             </h2>
           </div>
           <div class="overflow-y-auto max-h-[500px] rounded-xl border border-slate-200 dark:border-slate-700">
@@ -80,7 +79,7 @@ export async function renderSchoolsManager(container) {
           <div class="flex items-center justify-between">
             <h2 id="schoolTitleHeader" class="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
               <i data-lucide="school" class="w-5 h-5 text-emerald-500"></i>
-              Escuelas / Preuniversitarios
+              Escuelas (Báguanos)
             </h2>
             <button id="btnAddSchoolModal" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -108,8 +107,8 @@ export async function renderSchoolsManager(container) {
       <div id="schoolGroupDetailCard" class="hidden p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
         <div class="flex items-center justify-between">
           <div>
-            <h3 id="selectedSchoolNameText" class="text-lg font-bold text-slate-800 dark:text-slate-100">---</h3>
-            <p id="selectedSchoolLocationText" class="text-xs text-slate-500 dark:text-slate-400">---</p>
+            <h3 id="selectedSchoolNameText" class="text-lg font-bold text-slate-800 dark:text-slate-100">IPU Ursinio Rojas Santiesteban</h3>
+            <p id="selectedSchoolLocationText" class="text-xs text-slate-500 dark:text-slate-400">Provincia: Holguín | Municipio: Báguanos</p>
           </div>
           <button id="btnAddGroupModal" class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs transition-all flex items-center gap-1.5">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
@@ -179,11 +178,10 @@ async function loadProvincesTable() {
       });
     });
 
-    // Carga inicial por defecto (Artemisa)
-    if (list.length > 1) {
-      activeProvince = { id: list[1].id, name: list[1].name };
-      loadMunicipalitiesTable(list[1].id, list[1].name);
-    }
+    // Carga inicial por defecto (Holguín)
+    const holguin = list.find(p => p.name === 'Holguín') || list[0];
+    activeProvince = { id: holguin.id, name: holguin.name };
+    loadMunicipalitiesTable(holguin.id, holguin.name);
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-rose-400">Error al cargar provincias.</td></tr>';
   }
@@ -225,12 +223,10 @@ async function loadMunicipalitiesTable(provinceId, provinceName) {
       });
     });
 
-    // Carga inicial por defecto
-    if (list.length > 0) {
-      const targetMun = list.find(m => m.name === 'Artemisa') || list[0];
-      activeMunicipality = { id: targetMun.id, name: targetMun.name };
-      loadSchoolsList(targetMun.id, targetMun.name);
-    }
+    // Carga inicial por defecto (Báguanos)
+    const targetMun = list.find(m => m.name === 'Báguanos') || list[0];
+    activeMunicipality = { id: targetMun.id, name: targetMun.name };
+    loadSchoolsList(targetMun.id, targetMun.name);
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-rose-400">Error al cargar municipios.</td></tr>';
   }
@@ -284,7 +280,7 @@ async function inspectSchoolGroups(schoolId, schoolName) {
   detailCard.classList.remove('hidden');
 
   document.getElementById('selectedSchoolNameText').innerText = schoolName;
-  document.getElementById('selectedSchoolLocationText').innerText = `Provincia: ${activeProvince ? activeProvince.name : '---'} | Municipio: ${activeMunicipality ? activeMunicipality.name : '---'}`;
+  document.getElementById('selectedSchoolLocationText').innerText = `Provincia: ${activeProvince ? activeProvince.name : 'Holguín'} | Municipio: ${activeMunicipality ? activeMunicipality.name : 'Báguanos'}`;
 
   const badges = document.getElementById('groupsBadgeList');
   badges.innerHTML = '<span class="text-xs text-slate-400">Cargando grupos oficiales...</span>';
