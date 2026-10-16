@@ -2,8 +2,9 @@
  * ============================================================================
  * Proyecto: PreuSync Admin Panel
  * Archivo: dashboard.js
- * Versión: v1.6.0
- * Descripción: Vista Principal con estados 'Calculando...' e interfaz de reintento en caso de error.
+ * Versión: v2.0.0
+ * Descripción: Vista Principal con métricas desglosadas individualmente para las
+ *              5 DBs de Supabase y los 3 Nodos del Cluster de Render.
  * Autor: JiroxDEV
  * Licensed under the GNU Affero General Public License v3
  * ============================================================================
@@ -18,17 +19,17 @@ export async function renderDashboard(container) {
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 class="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100">Panel Principal</h1>
-          <p class="text-sm text-slate-500 dark:text-slate-400">Resumen operativo, métricas reales y telemetría de red en tiempo real</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Resumen operativo, métricas reales y telemetría por cada DB y Nodo de Render</p>
         </div>
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            API Operativa (Render)
+            Cluster Operativo (3 Nodos)
           </span>
         </div>
       </div>
 
-      <!-- Error Banner (Oculto por defecto) -->
+      <!-- Error Banner -->
       <div id="dashboardErrorBanner" class="hidden p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div class="flex items-center gap-3 text-rose-700 dark:text-rose-300 text-sm font-medium">
           <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
@@ -40,7 +41,7 @@ export async function renderDashboard(container) {
         </button>
       </div>
 
-      <!-- Metric Cards (6 Tarjetas exactas de la BD) -->
+      <!-- Metric Cards (6 Tarjetas exactas) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
           <div>
@@ -103,12 +104,12 @@ export async function renderDashboard(container) {
         </div>
       </div>
 
-      <!-- Sección de Telemetría Real y Consumo de Planes Gratuitos -->
+      <!-- Sección de Desglose por DB de Supabase y Nodo Render -->
       <div class="space-y-4 pt-2">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <i data-lucide="cpu" class="w-5 h-5 text-sky-500"></i>
-            Telemetría de Red y Consumo de Planes (Medición Real)
+            Telemetría de las 5 Bases de Datos de Supabase y Nodos Render
           </h2>
           <span id="daysUntilResetText" class="text-xs font-medium text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/60 px-3 py-1.5 rounded-lg border border-sky-200 dark:border-sky-800">
             🔄 Reinicio de cuotas: Día 1 de cada mes (00:00 UTC)
@@ -116,103 +117,37 @@ export async function renderDashboard(container) {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Tarjeta Supabase FREE -->
+          <!-- Tarjetas Desglosadas de Supabase DBs -->
           <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <i data-lucide="database" class="w-5 h-5 text-emerald-500"></i>
-                <h3 class="font-bold text-slate-800 dark:text-slate-100">Supabase Cloud</h3>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100">Red Supabase (5 DBs Especializadas)</h3>
               </div>
               <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                Plan FREE ($0.00/mes)
+                5x FREE (2.5 GB Total)
               </span>
             </div>
 
-            <div class="space-y-3 pt-1">
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Usuarios Activos Mensuales (MAU)</span>
-                  <span id="supabaseMauVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="supabaseMauBar" class="h-full bg-emerald-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Tamaño de Base de Datos</span>
-                  <span id="supabaseDbVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="supabaseDbBar" class="h-full bg-emerald-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Ancho de Banda Medido (Egress Real)</span>
-                  <span id="supabaseEgressVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="supabaseEgressBar" class="h-full bg-emerald-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Almacenamiento de Archivos</span>
-                  <span id="supabaseStorageVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="supabaseStorageBar" class="h-full bg-emerald-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
+            <div id="supabaseDbsListContainer" class="space-y-3 pt-1">
+              <div class="text-xs text-slate-400">Calculando espacio por cada DB...</div>
             </div>
           </div>
 
-          <!-- Tarjeta Render Hobby -->
+          <!-- Tarjetas Desglosadas de Nodos Render -->
           <div class="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-sm space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <i data-lucide="server" class="w-5 h-5 text-sky-500"></i>
-                <h3 class="font-bold text-slate-800 dark:text-slate-100">Render Cloud</h3>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100">Cluster Render (3 Nodos API)</h3>
               </div>
               <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-                Plan Hobby ($0.00/mes)
+                3x Hobby (15 GB Red)
               </span>
             </div>
 
-            <div class="space-y-3 pt-1">
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Ancho de Banda Mensual Medido</span>
-                  <span id="renderBandwidthVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="renderBandwidthBar" class="h-full bg-sky-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Minutos de Construcción (Build Minutes)</span>
-                  <span id="renderBuildMinutesVal" class="text-slate-800 dark:text-slate-200 font-bold">Calculando...</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div id="renderBuildMinutesBar" class="h-full bg-sky-500 rounded-full w-[0%] transition-all duration-500"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between text-xs font-medium mb-1">
-                  <span class="text-slate-600 dark:text-slate-400">Servicios Desplegados</span>
-                  <span class="text-slate-800 dark:text-slate-200 font-bold">2 / 25 servicios</span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                  <div class="h-full bg-sky-500 rounded-full w-[8%]"></div>
-                </div>
-              </div>
+            <div id="renderNodesListContainer" class="space-y-3 pt-1">
+              <div class="text-xs text-slate-400">Calculando ancho de banda por cada Nodo...</div>
             </div>
           </div>
         </div>
@@ -281,33 +216,46 @@ async function loadRealDashboardMetrics() {
       document.getElementById('statProvinces').innerText = `${provinces.length || 16} Provincias`;
     }
 
-    // Consulta de telemetría real
+    // Render de Telemetría desglosada por DB y Nodo
     if (telemRes && telemRes.data) {
       const t = telemRes.data;
-      if (document.getElementById('supabaseMauVal')) document.getElementById('supabaseMauVal').innerText = t.mauFormatted;
-      if (document.getElementById('supabaseMauBar')) document.getElementById('supabaseMauBar').style.width = `${Math.max(0.1, t.mauPercentage)}%`;
 
-      if (document.getElementById('supabaseDbVal')) document.getElementById('supabaseDbVal').innerText = t.dbSizeFormatted;
-      if (document.getElementById('supabaseDbBar')) document.getElementById('supabaseDbBar').style.width = `${Math.max(0.4, t.dbSizePercentage)}%`;
+      const dbsContainer = document.getElementById('supabaseDbsListContainer');
+      if (dbsContainer && t.databases) {
+        dbsContainer.innerHTML = t.databases.map(db => `
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <div class="flex justify-between text-xs font-medium">
+              <span class="text-slate-700 dark:text-slate-300 font-semibold">${db.name}</span>
+              <span class="text-slate-900 dark:text-slate-100 font-bold">${db.sizeFormatted}</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: ${Math.max(0.4, db.percentage)}%"></div>
+            </div>
+          </div>
+        `).join('');
+      }
 
-      if (document.getElementById('supabaseEgressVal')) document.getElementById('supabaseEgressVal').innerText = t.egressFormatted;
-      if (document.getElementById('supabaseEgressBar')) document.getElementById('supabaseEgressBar').style.width = `${Math.max(0.1, t.egressPercentage)}%`;
-
-      if (document.getElementById('supabaseStorageVal')) document.getElementById('supabaseStorageVal').innerText = t.storageFormatted;
-      if (document.getElementById('supabaseStorageBar')) document.getElementById('supabaseStorageBar').style.width = `${Math.max(0.5, t.storagePercentage)}%`;
-
-      if (document.getElementById('renderBandwidthVal')) document.getElementById('renderBandwidthVal').innerText = t.renderBandwidthFormatted;
-      if (document.getElementById('renderBandwidthBar')) document.getElementById('renderBandwidthBar').style.width = `${Math.max(0.1, t.egressPercentage)}%`;
-
-      if (document.getElementById('renderBuildMinutesVal')) document.getElementById('renderBuildMinutesVal').innerText = t.renderBuildMinutesFormatted;
-      if (document.getElementById('renderBuildMinutesBar')) document.getElementById('renderBuildMinutesBar').style.width = `${Math.max(0.5, t.renderBuildMinutesPercentage)}%`;
+      const nodesContainer = document.getElementById('renderNodesListContainer');
+      if (nodesContainer && t.nodes) {
+        nodesContainer.innerHTML = t.nodes.map(node => `
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-1">
+            <div class="flex justify-between text-xs font-medium">
+              <span class="text-slate-700 dark:text-slate-300 font-semibold">${node.name}</span>
+              <span class="text-slate-900 dark:text-slate-100 font-bold">${node.bandwidthFormatted}</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full bg-sky-500 rounded-full transition-all duration-500" style="width: ${Math.max(0.1, t.mauPercentage || 0.1)}%"></div>
+            </div>
+          </div>
+        `).join('');
+      }
 
       if (document.getElementById('daysUntilResetText')) {
         document.getElementById('daysUntilResetText').innerText = `🔄 Quedan ${t.daysUntilReset} días para el reinicio automático de cuotas (Día 1 / 00:00 UTC)`;
       }
     }
 
-    // Consulta concurrente de municipios
+    // Consulta de Municipios
     let totalMunicipalities = 0;
     let targetMunicipalityId = 'eba718c1-f696-4a98-91cc-2cd37b9e405a';
 
@@ -325,7 +273,7 @@ async function loadRealDashboardMetrics() {
       document.getElementById('statMunicipalities').innerText = `${totalMunicipalities > 0 ? totalMunicipalities : 168} Municipios`;
     }
 
-    // Consulta de escuelas
+    // Consulta de Escuelas
     let totalSchools = 0;
     let sampleSchoolId = 'f4a234a1-b7aa-40d6-b217-b7b4afd70c3a';
 

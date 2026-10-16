@@ -10,8 +10,15 @@
  */
 
 export const CONFIG = {
-  // URL base de la API oficial de PreuSync en Render
-  API_BASE_URL: 'https://preusync-api.onrender.com/api',
+  // URL base del Nodo 1 de la API oficial de PreuSync en Render
+  API_BASE_URL: 'https://preusync-api-node1.onrender.com/api',
+
+  // Lista de Nodos Espejo de la Red Multi-Nodo para Failover
+  NODE_URLS: [
+    'https://preusync-api-node1.onrender.com/api',
+    'https://preusync-api-node2.onrender.com/api',
+    'https://preusync-api-node3.onrender.com/api'
+  ],
 
   // Claves para persistencia en localStorage
   STORAGE_KEYS: {
