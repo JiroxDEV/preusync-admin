@@ -129,7 +129,7 @@ class App {
                   P
                 </div>
                 <div>
-                  <h2 class="font-bold text-base tracking-tight text-slate-800 dark:text-slate-100">PreuSync</h2>
+                  <h2 class="font-bold text-base tracking-tight text-slate-800 dark:text-slate-100">PreuSync™</h2>
                   <span class="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest">Admin Panel</span>
                 </div>
               </div>
